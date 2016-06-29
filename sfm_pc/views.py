@@ -19,14 +19,14 @@ from source.models import Source, Publication
 from organization.models import Organization
 from person.models import Person
 from cities.models import Place, City, Country, Region, Subregion, District
-from violation.models import Violation
+from event.models import Event
 
 SEARCH_CONTENT_TYPES = {
     'Source': Source,
     'Publication': Publication,
     'Organization': Organization,
     'Person': Person,
-    'Violation': Violation,
+    'Event': Event,
 }
 
 GEONAME_TYPES = {

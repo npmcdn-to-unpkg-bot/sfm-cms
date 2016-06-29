@@ -261,16 +261,16 @@ class Command(BaseCommand):
                   UNION
                   SELECT
                     to_tsvector('english', vvd.value) AS content,
-                    'Violation' AS content_type,
-                    'violationdescription' AS value_type,
+                    'Event' AS content_type,
+                    'eventdescription' AS value_type,
                     vvd.object_ref_id,
                     vvd.id,
                     coordinates.value AS site,
                     NULL::geometry(Polygon, 4326) AS area
-                  FROM violation_violationdescription AS vvd
-                  JOIN violation_violation AS vv
+                  FROM event_eventdescription AS vvd
+                  JOIN event_event AS vv
                     ON vvd.object_ref_id = vv.id
-                  JOIN violation_violationlocation AS coordinates
+                  JOIN event_eventlocation AS coordinates
                     ON coordinates.object_ref_id = vv.id
             '''
             

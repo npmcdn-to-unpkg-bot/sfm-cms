@@ -15,16 +15,16 @@ from django.core.urlresolvers import reverse_lazy
 from extra_views import FormSetView
 from cities.models import Place, City, Country, Region, Subregion, District
 
-from violation.models import Violation, Type
+from event.models import Event, Type
+from event.forms import ZoneForm, EventForm
 from source.models import Source
 from person.models import Person
 from organization.models import Organization
-from violation.forms import ZoneForm, ViolationForm
 from sfm_pc.utils import deleted_in_str
 
-class ViolationCreate(FormSetView):
-    template_name = 'violation/create.html'
-    form_class = ViolationForm
+class EventCreate(FormSetView):
+    template_name = 'event/create.html'
+    form_class = EventForm
     success_url = reverse_lazy('dashboard')
     extra = 1
     max_num = None
@@ -56,8 +56,8 @@ class ViolationCreate(FormSetView):
     def post(self, request, *args, **kwargs):
         organizations = self.request.session['organizations']
 
-        ViolationFormset = self.get_formset()
-        formset = ViolationFormset(request.POST)
+        EventFormset = self.get_formset()
+        formset = EventFormset(request.POST)
 
         if formset.is_valid():
             return self.formset_valid(formset)
@@ -110,69 +110,69 @@ class ViolationCreate(FormSetView):
                 admin2 = geo.parent.parent.name
                 coords = geo.location
 
-            violation_data = {
-                'Violation_ViolationDescription': {
+            event_data = {
+                'Event_EventDescription': {
                    'value': description,
                    'sources': [source],
                    'confidence': 1
                 },
-                'Violation_ViolationLocationDescription': {
+                'Event_EventLocationDescription': {
                     'value': locationdescription,
                     'sources': [source],
                     'confidence': 1
                 },
-                'Violation_ViolationType': {
+                'Event_EventType': {
                     'value': newtype,
                     'sources': [source],
                     'confidence': 1
                 },
-                'Violation_ViolationPerpetrator': {
+                'Event_EventPerpetrator': {
                     'value': Person.objects.get(id=perpetrators),
                     'sources': [source],
                     'confidence': 1
                 },
-                'Violation_ViolationPerpetratorOrganization': {
+                'Event_EventPerpetratorOrganization': {
                     'value': Organization.objects.get(id=orgs),
                     'sources': [source],
                     'confidence': 1
                 },
-                'Violation_ViolationAdminLevel1': {
+                'Event_EventAdminLevel1': {
                     'value': admin1,
                     'sources': [source],
                     'confidence': 1
                 },
-                'Violation_ViolationAdminLevel2': {
+                'Event_EventAdminLevel2': {
                     'value': admin2,
                     'sources': [source],
                     'confidence': 1
                 },
-                'Violation_ViolationGeoname': {
+                'Event_EventGeoname': {
                     'value': geo.name,
                     'sources': [source],
                     'confidence': 1
                 },
-                'Violation_ViolationGeonameId': {
+                'Event_EventGeonameId': {
                     'value': geo.id,
                     'sources': [source],
                     'confidence': 1
                 },
-                'Violation_ViolationLocation': {
+                'Event_EventLocation': {
                     'value': coords,
                     'sources': [source],
                     'confidence': 1
                 }
             }
-            Violation.create(violation_data)
+            Event.create(event_data)
         response = super().formset_valid(formset)
         return response
 
 
-class ViolationDelete(DeleteView):
-    model = Violation
+class EventDelete(DeleteView):
+    model = Event
     template_name = "delete_confirm.html"
 
     def get_context_data(self, **kwargs):
-        context = super(ViolationDelete, self).get_context_data(**kwargs)
+        context = super(EventDelete, self).get_context_data(**kwargs)
         collector = NestedObjects(using=DEFAULT_DB_ALIAS)
         collector.collect([context['object']])
         deleted_elements = collector.nested()
@@ -180,116 +180,59 @@ class ViolationDelete(DeleteView):
         return context
 
     def get_object(self, queryset=None):
-        obj = super(ViolationDelete, self).get_object()
+        obj = super(EventDelete, self).get_object()
 
         return obj
 
 
-class ViolationView(TemplateView):
-    template_name = 'violation/search.html'
 
-    def get_context_data(self, **kwargs):
-        context = super(ViolationView, self).get_context_data(**kwargs)
-
-        context['year_range'] = range(1950, date.today().year + 1)
-        context['day_range'] = range(1, 32)
-
-        return context
-
-
-def violation_csv(request):
+def event_csv(request):
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="violations.csv"'
+    response['Content-Disposition'] = 'attachment; filename="events.csv"'
 
     terms = request.GET.dict()
-    violation_query = Violation.search(terms)
+    event_query = Event.search(terms)
 
     writer = csv.writer(response)
-    for violation in violation_query:
+    for event in event_query:
         writer.writerow([
-            violation.id,
-            violation.description.get_value(),
-            repr(violation.startdate.get_value()),
-            repr(violation.enddate.get_value()),
-            violation.locationdescription.get_value(),
-            violation.adminlevel1.get_value(),
-            violation.adminlevel2.get_value(),
-            violation.geoname.get_value(),
-            violation.geonameid.get_value(),
-            violation.location.get_value(),
-            violation.perpetrator.get_value(),
-            violation.perpetratororganization.get_value(),
+            event.id,
+            event.description.get_value(),
+            repr(event.startdate.get_value()),
+            repr(event.enddate.get_value()),
+            event.locationdescription.get_value(),
+            event.adminlevel1.get_value(),
+            event.adminlevel2.get_value(),
+            event.geoname.get_value(),
+            event.geonameid.get_value(),
+            event.location.get_value(),
+            event.perpetrator.get_value(),
+            event.perpetratororganization.get_value(),
         ])
 
     return response
 
 
-def violation_search(request):
-    terms = request.GET.dict()
-
-    page = int(terms.get('page', 1))
-    violation_query = Violation.search(terms)
-
-    keys = ['startdate', 'enddate', 'geoname', 'perpetrator', 'organization']
-
-    paginator = Paginator(violation_query, 15)
-    try:
-        violation_page = paginator.page(page)
-    except PageNotAnInteger:
-        violation_page = paginator.page(1)
-        page = 1
-    except EmptyPage:
-        violation_page = paginator.page(paginator.num_pages)
-        page = paginator.num_pages
-
-    violations = [
-        {
-            "id": violation.id,
-            "startdate": str(violation.startdate.get_value().value),
-            "enddate": str(violation.enddate.get_value().value),
-            "geoname": str(violation.geoname.get_value().value),
-            "perpetrator": str(violation.perpetrator.get_value().value),
-            "organization": str(violation.perpetratororganization.get_value().value),
-        }
-        for violation in violation_page
-    ]
-
-    html_paginator = render_to_string(
-        'paginator.html',
-        {'actual': page, 'min': page - 5, 'max': page + 5,
-         'paginator': violation_page,
-         'pages': range(1, paginator.num_pages + 1)}
-    )
-
-    return HttpResponse(json.dumps({
-        'success': True,
-        'keys': keys,
-        'objects': violations,
-        'paginator': html_paginator,
-        'result_number': len(violation_query)
-    }))
-
-
-class ViolationUpdate(TemplateView):
-    template_name = 'violation/edit.html'
+class EventUpdate(TemplateView):
+    template_name = 'event/edit.html'
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.POST.dict()['object'])
         try:
-            violation = Violation.objects.get(pk=kwargs.get('pk'))
-        except Violation.DoesNotExist:
-            msg = "This violation does not exist, it should be created " \
+            event = Event.objects.get(pk=kwargs.get('pk'))
+        except Event.DoesNotExist:
+            msg = "This event does not exist, it should be created " \
                   "before updating it."
             return HttpResponse(msg, status=400)
 
-        (errors, data) = violation.validate(data)
+        (errors, data) = event.validate(data)
         if len(errors):
             return HttpResponse(
                 json.dumps({"success": False, "errors": errors}),
                 content_type="application/json"
             )
 
-        violation.update(data)
+        event.update(data)
 
         return HttpResponse(
             json.dumps({"success": True}),
@@ -297,10 +240,10 @@ class ViolationUpdate(TemplateView):
         )
 
     def get_context_data(self, **kwargs):
-        context = super(ViolationUpdate, self).get_context_data(**kwargs)
-        violation = Violation.objects.get(pk=context.get('pk'))
-        context['violation'] = violation
-        data = {"value": violation.location.get_value().value}
+        context = super(EventUpdate, self).get_context_data(**kwargs)
+        event = Event.objects.get(pk=context.get('pk'))
+        context['event'] = event
+        data = {"value": event.location.get_value().value}
         context['point'] = ZoneForm(data)
 
         return context

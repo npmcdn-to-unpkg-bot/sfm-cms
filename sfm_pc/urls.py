@@ -19,7 +19,7 @@ urlpatterns = i18n_patterns(
     url(r'^association/', include('association.urls')),
     url(r'^geosite/', include('geosite.urls')),
     url(r'^emplacement/', include('emplacement.urls')),
-    url(r'^violation/', include('violation.urls')),
+    url(r'^event/', include('event.urls')),
     url(r'^search/', search, name="search"),
     
     url(r'^geoname-autocomplete/$', geoname_autocomplete, name="geoname-autocomplete"),

@@ -5,7 +5,7 @@ from django.db import connection
 from source.models import Source, Publication
 from organization.models import OrganizationName, OrganizationAlias
 from person.models import PersonAlias, PersonName
-from violation.models import ViolationDescription
+from event.models import EventDescription
 
 def update_index():
     
@@ -42,8 +42,8 @@ def update_personname_index(sender, **kwargs):
 def update_personalias_index(sender, **kwargs):
     update_index()
 
-@receiver(post_save, sender=ViolationDescription)
-def update_violation_index(sender, **kwargs):
+@receiver(post_save, sender=EventDescription)
+def update_event_index(sender, **kwargs):
     update_index()
 
 @receiver(post_delete, sender=Source)
@@ -74,6 +74,6 @@ def delete_personname_index(sender, **kwargs):
 def delete_personalias_index(sender, **kwargs):
     update_index()
 
-@receiver(post_delete, sender=ViolationDescription)
-def delete_violation_index(sender, **kwargs):
+@receiver(post_delete, sender=EventDescription)
+def delete_event_index(sender, **kwargs):
     update_index()

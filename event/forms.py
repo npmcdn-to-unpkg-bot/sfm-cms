@@ -3,9 +3,9 @@ from django import forms
 from django_date_extensions.fields import ApproximateDateFormField
 
 from leaflet.forms.widgets import LeafletWidget
-from .models import ViolationLocation
+from .models import EventLocation
 
-class ViolationForm(forms.Form):
+class EventForm(forms.Form):
     startdate = ApproximateDateFormField(required=False)
     enddate = ApproximateDateFormField(required=False)
     locationdescription = forms.CharField(required=False)
@@ -22,10 +22,10 @@ class ZoneForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ZoneForm, self).__init__(*args, **kwargs)
         self.fields['value'].widget = LeafletWidget(attrs={
-            "id": "Violation_ViolationLocation"
+            "id": "Event_EventLocation"
         })
 
     class Meta:
-        model = ViolationLocation
+        model = EventLocation
         fields = ('value',)
         widgets = {'value': LeafletWidget()}
